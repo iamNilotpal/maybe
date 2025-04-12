@@ -85,24 +85,29 @@ func (n Nullable[T]) ToOption() Option[T] {
 // Equals compares two Nullable values for equality.
 // Two Nullable values are equal if:
 //  1. Both are null, or
-//  2. Both are valid and contain equal values
+//  2. Both are valid and contain equal values.
 func (n Nullable[T]) Equals(other Nullable[T]) bool {
 	if n.valid != other.valid {
 		return false
 	}
 
 	if !n.valid {
-		return true // Both are null
+		return true
 	}
 
-	return reflect.ValueOf(n.value).Equal(reflect.ValueOf(other.value))
+	// Check if T is comparable.
+	if tType := reflect.TypeOf(n.value); !tType.Comparable() {
+		return false
+	}
+
+	return reflect.DeepEqual(n.value, other.value)
 }
 
 // MarshalJSON implements the json.Marshaler interface.
 // An invalid Nullable will be marshaled as null.
 func (n Nullable[T]) MarshalJSON() ([]byte, error) {
 	if !n.valid {
-		return nil, ErrMissingValue
+		return json.Marshal(nil)
 	}
 	return json.Marshal(n.value)
 }
@@ -137,19 +142,19 @@ func (n Nullable[T]) Value() (driver.Value, error) {
 
 	// First check if the value implements driver.Valuer itself (e.g., custom types)
 	// This allows custom types to handle their own SQL conversion logic
-	if valuer, ok := any(n.Value).(driver.Valuer); ok {
+	if valuer, ok := any(n.value).(driver.Valuer); ok {
 		return valuer.Value()
 	}
 
 	// Fast path for common types that don't need conversion
 	// These types are directly supported by SQL drivers
-	switch v := any(n.Value).(type) {
+	switch v := any(n.value).(type) {
 	case int64, float64, bool, []byte, string, time.Time:
 		return v, nil
 	}
 
 	// Reflection-based handling for other numeric types
-	rv := reflect.ValueOf(n.Value)
+	rv := reflect.ValueOf(n.value)
 	switch rv.Kind() {
 	// Convert signed integers to int64 (widely supported by SQL drivers)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32:
@@ -171,7 +176,7 @@ func (n Nullable[T]) Value() (driver.Value, error) {
 	}
 
 	// Fallback error for unsupported types
-	return nil, fmt.Errorf("unsupported database type: %T", n.Value)
+	return nil, fmt.Errorf("unsupported database type: %T", n.value)
 }
 
 // Scan implements sql.Scanner to convert database values to Go types.
@@ -203,7 +208,7 @@ func (n *Nullable[T]) Scan(value any) error {
 	}
 
 	// Reflection-based conversion system for type mismatches
-	destType := reflect.TypeOf(n.Value)
+	destType := reflect.TypeOf(n.value)
 	sourceVal := reflect.ValueOf(value)
 
 	// Numeric type handling (integers and floats)
@@ -286,7 +291,7 @@ func (n *Nullable[T]) Scan(value any) error {
 		n.value = reflect.ValueOf(floatVal).Convert(destType).Interface().(T)
 
 	default:
-		return fmt.Errorf("cannot scan %T into Nullable[%T]", value, n.Value)
+		return fmt.Errorf("cannot scan %T into Nullable[%T]", value, n.value)
 	}
 
 	n.valid = true

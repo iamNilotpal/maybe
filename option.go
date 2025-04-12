@@ -124,7 +124,7 @@ func (o Option[T]) AndThenOr(defaultValue T, fn func(Option[T]) Option[T]) Optio
 // Attempts to marshal the contained value if present, or returns an error if None.
 func (o Option[T]) MarshalJSON() ([]byte, error) {
 	if !o.has {
-		return nil, ErrMissingValue
+		return json.Marshal(nil)
 	}
 	return json.Marshal(o.value)
 }
