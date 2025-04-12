@@ -29,11 +29,10 @@ func IsNil(i any) bool {
 // This is useful for fallback chains where multiple potential values are available.
 func FirstNonZero[T comparable](vals ...T) (T, bool) {
 	for _, v := range vals {
-		if IsZero(v) {
+		if !IsZero(v) {
 			return v, true
 		}
 	}
-
 	var zero T
 	return zero, false
 }
@@ -41,10 +40,12 @@ func FirstNonZero[T comparable](vals ...T) (T, bool) {
 // MapSlice applies a function to each element in a slice and returns a new slice with the results.
 // Transforms elements from type T to type U based on the provided mapping function.
 func MapSlice[T, U any](input []T, mapFn func(T) U) []U {
-	result := make([]U, len(input))
-	for i, v := range input {
-		result[i] = mapFn(v)
+	result := make([]U, 0, len(input))
+
+	for _, v := range input {
+		result = append(result, mapFn(v))
 	}
+
 	return result
 }
 
@@ -52,11 +53,13 @@ func MapSlice[T, U any](input []T, mapFn func(T) U) []U {
 // Creates a new slice without modifying the original.
 func FilterSlice[T any](input []T, predicate func(T) bool) []T {
 	result := make([]T, 0, len(input))
+
 	for _, v := range input {
 		if predicate(v) {
 			result = append(result, v)
 		}
 	}
+
 	return result
 }
 
@@ -64,9 +67,11 @@ func FilterSlice[T any](input []T, predicate func(T) bool) []T {
 // Combines elements into a single result using the provided reduction function.
 func ReduceSlice[T, R any](input []T, initial R, reducer func(R, T) R) R {
 	result := initial
+
 	for _, v := range input {
 		result = reducer(result, v)
 	}
+
 	return result
 }
 
@@ -84,7 +89,7 @@ func CollectOptions[T any](options []Option[T]) Option[[]T] {
 
 	for _, opt := range options {
 		v, ok := opt.Value()
-		if opt.IsNone() || !ok {
+		if !ok {
 			return None[[]T]()
 		}
 		result = append(result, v)
@@ -99,8 +104,7 @@ func FilterSomeOptions[T any](options []Option[T]) []T {
 	result := make([]T, 0, len(options))
 
 	for _, opt := range options {
-		v, ok := opt.Value()
-		if opt.IsSome() && ok {
+		if v, ok := opt.Value(); ok {
 			result = append(result, v)
 		}
 	}
@@ -116,9 +120,7 @@ func PartitionOptions[T any](options []Option[T]) (values []T, noneIndices []int
 	noneIndices = make([]int, 0)
 
 	for i, opt := range options {
-		v, ok := opt.Value()
-
-		if opt.IsSome() && ok {
+		if v, ok := opt.Value(); ok {
 			values = append(values, v)
 		} else {
 			noneIndices = append(noneIndices, i)
@@ -136,9 +138,9 @@ func TryMap[T, U any](input []T, fn func(T) Option[U]) Option[[]U] {
 
 	for _, v := range input {
 		opt := fn(v)
-		v, ok := opt.Value()
 
-		if opt.IsNone() || !ok {
+		v, ok := opt.Value()
+		if !ok {
 			return None[[]U]()
 		}
 		result = append(result, v)
