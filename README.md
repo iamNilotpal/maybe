@@ -105,79 +105,80 @@ Key operations:
 package main
 
 import (
-    "fmt"
-    "github.com/iamNilotpal/maybe"
+	"fmt"
+
+	"github.com/iamNilotpal/maybe"
 )
 
 func main() {
-    // Working with Option
-    name := maybe.Some("Nilotpal")
-    emptyName := maybe.None[string]()
+	// Working with Option
+	name := maybe.Some("Nilotpal")
+	emptyName := maybe.None[string]()
 
-    // Checking value presence
-    fmt.Println("Has name:", name.IsSome())        // true
-    fmt.Println("Has empty name:", emptyName.IsNone())  // true
+	// Checking value presence
+	fmt.Println("Has name:", name.IsSome())            // true
+	fmt.Println("Has empty name:", emptyName.IsNone()) // true
 
-    // Safe access patterns
-    if value, ok := name.Value(); ok {
-        fmt.Println("Name:", value)                // "Nilotpal"
-    }
+	// Safe access patterns
+	if value, ok := name.Value(); ok {
+		fmt.Println("Name:", value) // "Nilotpal"
+	}
 
-    // Default values
-    fmt.Println("Name or default:", name.ValueOr("Anonymous"))           // "Nilotpal"
-    fmt.Println("Empty name or default:", emptyName.ValueOr("Anonymous"))  // "Anonymous"
+	// Default values
+	fmt.Println("Name or default:", name.ValueOr("Anonymous"))            // "Nilotpal"
+	fmt.Println("Empty name or default:", emptyName.ValueOr("Anonymous")) // "Anonymous"
 
-    // Unwrap (safe only when you're certain the value exists)
-    fmt.Println("Unwrapped name:", name.Unwrap())  // "Nilotpal"
-    // emptyName.Unwrap() would panic with ErrMissingValue
+	// Unwrap (safe only when you're certain the value exists)
+	fmt.Println("Unwrapped name:", name.Unwrap()) // "Nilotpal"
+	// emptyName.Unwrap() would panic with ErrMissingValue
 
-    // Get or set a value
-    emptyName.Set("Bob")
-    fmt.Println("Name after set:", emptyName.ValueOr(""))  // "Bob"
+	// Get or set a value
+	emptyName.Set("Bob")
+	fmt.Println("Name after set:", emptyName.ValueOr("")) // "Bob"
 
-    emptyName.Unset()
-    fmt.Println("Is name none after unset:", emptyName.IsNone())  // true
+	emptyName.Unset()
+	fmt.Println("Is name none after unset:", emptyName.IsNone()) // true
 
-    // Convert to/from pointers
-    // var strPtr *string = name.Ptr()                // Pointer to "Nilotpal"
-    // var nilPtr *string = emptyName.Ptr()           // nil pointer
+	// Convert to/from pointers
+	var _ *string = name.Ptr()           // Pointer to "Nilotpal"
+	var nilPtr *string = emptyName.Ptr() // nil pointer
 
-    // someStr := "Hello"
-    // optFromPtr := maybe.FromPtr(&someStr)          // Some("Hello")
-    // optFromNil := maybe.FromPtr(nilPtr)            // None
+	someStr := "Hello"
+	_ = maybe.FromPtr(&someStr) // Some("Hello")
+	_ = maybe.FromPtr(nilPtr)   // None
 
-    // Working with Nullable (for database/JSON)
-    userID := maybe.NullableOf(123)
-    noID := maybe.Null[int]()
+	// Working with Nullable (for database/JSON)
+	userID := maybe.NullableOf(123)
+	noID := maybe.Null[int]()
 
-    fmt.Println("Has ID:", userID.IsValid())       // true
-    fmt.Println("No ID:", noID.IsNull())           // true
+	fmt.Println("Has ID:", userID.IsValid()) // true
+	fmt.Println("No ID:", noID.IsNull())     // true
 
-    // Extract value from Nullable
-    if val, ok := userID.Extract(); ok {
-        fmt.Println("User ID:", val)               // 123
-    }
+	// Extract value from Nullable
+	if val, ok := userID.Extract(); ok {
+		fmt.Println("User ID:", val) // 123
+	}
 
-    // Default values with Nullable
-    fmt.Println("ID or default:", userID.ExtractOr(0))     // 123
-    fmt.Println("No ID or default:", noID.ExtractOr(999))  // 999
+	// Default values with Nullable
+	fmt.Println("ID or default:", userID.ExtractOr(0))    // 123
+	fmt.Println("No ID or default:", noID.ExtractOr(999)) // 999
 
-    // Convert between Option and Nullable
-    // optionID := userID.ToOption()                  // Some(123)
+	// Convert between Option and Nullable
+	_ = userID.ToOption() // Some(123)
 
-    // Create Nullable from pointer
-    // ptrID := userID.ToPtr()                        // Pointer to 123
-    // nullableFromPtr := maybe.NullableFromPtr(ptrID)  // Valid Nullable with 123
+	// Create Nullable from pointer
+	ptrID := userID.ToPtr()          // Pointer to 123
+	_ = maybe.NullableFromPtr(ptrID) // Valid Nullable with 123
 
-    // Using with zero values
-    zeroInt := maybe.NullableOf(0)                 // Valid Nullable containing 0
-    fmt.Println("Is zero int null?", zeroInt.IsNull())  // false
+	// Using with zero values
+	zeroInt := maybe.NullableOf(0)                     // Valid Nullable containing 0
+	fmt.Println("Is zero int null?", zeroInt.IsNull()) // false
 
-    // Equality check
-    anotherZero := maybe.NullableOf(0)
-    fmt.Println("Equal zero values:", zeroInt.Equals(anotherZero))  // true
-    fmt.Println("Equal to different value:", zeroInt.Equals(userID))  // false
-    fmt.Println("Both null equal:", noID.Equals(maybe.Null[int]()))  // true
+	// Equality check
+	anotherZero := maybe.NullableOf(0)
+	fmt.Println("Equal zero values:", zeroInt.Equals(anotherZero))   // true
+	fmt.Println("Equal to different value:", zeroInt.Equals(userID)) // false
+	fmt.Println("Both null equal:", noID.Equals(maybe.Null[int]()))  // true
 }
 ```
 
@@ -188,8 +189,9 @@ package main
 
 import (
     "fmt"
-    "github.com/iamNilotpal/maybe"
     "strconv"
+
+    "github.com/iamNilotpal/maybe"
 )
 
 // A function that may fail
@@ -258,9 +260,10 @@ package main
 import (
     "database/sql"
     "fmt"
-    "github.com/iamNilotpal/maybe"
     "time"
+
     _ "github.com/go-sql-driver/mysql"
+    "github.com/iamNilotpal/maybe"
 )
 
 type User struct {
@@ -349,6 +352,7 @@ package main
 import (
     "encoding/json"
     "fmt"
+
     "github.com/iamNilotpal/maybe"
 )
 
@@ -430,8 +434,9 @@ package main
 
 import (
     "fmt"
-    "github.com/iamNilotpal/maybe"
     "strings"
+
+    "github.com/iamNilotpal/maybe"
 )
 
 type Product struct {
@@ -522,8 +527,9 @@ package main
 
 import (
     "fmt"
-    "github.com/iamNilotpal/maybe"
     "strconv"
+
+    "github.com/iamNilotpal/maybe"
 )
 
 // Parse a string to an int, returning an Option
@@ -598,6 +604,7 @@ package main
 
 import (
     "fmt"
+
     "github.com/iamNilotpal/maybe"
 )
 
